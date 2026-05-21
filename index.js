@@ -23,8 +23,10 @@ class LLMCostOptimizer {
             throw new Error("Missing required field: text");
         }
 
+        // 🟢 Added the 'mode' parameter to the payload being shipped to your Vercel API
         const payload = {
             text: options.text,
+            mode: options.mode || "chat", // Default to conversational chat mode
             strategy: options.strategy || ["minify"],
             language: options.language || "en",
             ignore_words: options.ignoreWords || []
@@ -62,8 +64,10 @@ function wrapClient(client, config = {}) {
         throw new Error("llm-cost-optimizer-node: wrapClient requires a 'rapidApiKey' in the config object.");
     }
 
-    // Uses the class available right above in the file scope safely
     const optimizer = new LLMCostOptimizer({ apiKey: config.rapidApiKey });
+    
+    // 🟢 Establish fallback configurations for optimization modes and strategies
+    const defaultMode = config.mode || "chat";
     const defaultStrategy = config.strategy || ["minify", "strip_stopwords", "stemming"];
 
     return new Proxy(client, {
@@ -85,8 +89,10 @@ function wrapClient(client, config = {}) {
                                                     const msg = payload.messages[i];
                                                     if (msg.content && typeof msg.content === 'string') {
                                                         try {
+                                                            // 🟢 Passing the target mode out to the class compressor loop
                                                             const result = await optimizer.compress({
                                                                 text: msg.content,
+                                                                mode: defaultMode, 
                                                                 strategy: defaultStrategy,
                                                                 language: "en"
                                                             });

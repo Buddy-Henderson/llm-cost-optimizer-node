@@ -1,3 +1,4 @@
 .npmrc
 test-optimizer.js
 test-proxy.js
+test-api.http

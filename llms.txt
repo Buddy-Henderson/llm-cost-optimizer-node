@@ -1,0 +1,69 @@
+# llm-cost-optimizer-node
+
+> Zero-config, drop-in client wrapper and proxy utility designed to automatically optimize prompts, reduce token counts, and cut LLM API costs.
+
+## Core Integration Patterns
+
+### 1. The Drop-In Wrapper (Recommended)
+Intercepts all outgoing chat completion arrays automatically, compresses the payload via the cloud API gateway, handles metrics telemetry, and passes optimized text to the model.
+
+- **Function:** `wrapClient(clientInstance, config)`
+- **Arguments:**
+  - `clientInstance`: An instantiated OpenAI or compatible client object.
+  - `config`: Object containing configuration keys.
+    - `rapidApiKey` (string, required): Your personal RapidAPI Gateway access key.
+    - `strategy` (array of strings, optional): Specific compression routines to run. Default runs standard minification.
+
+```javascript
+const { OpenAI } = require('openai');
+const { wrapClient } = require('llm-cost-optimizer-node');
+
+const openai = wrapClient(new OpenAI({ apiKey: process.env.OPENAI_API_KEY }), {
+    rapidApiKey: process.env.RAPID_API_KEY,
+    strategy: ["minify", "strip_stopwords"]
+});
+
+// Use client normally - interception happens seamlessly under the hood
+const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{ role: "user", content: "Your lengthy prompt text goes here..." }]
+});
+
+```
+
+###2. Advanced Manual Mode
+Direct access to the core compression class for handling raw text blocks, pre-processing RAG contexts, or saving tokens in custom vector workflows.
+
+** Class: ** LLMCostOptimizer
+
+** Instance Methods: ** compress({ text, strategy, language })
+
+```
+const { LLMCostOptimizer } = require('llm-cost-optimizer-node');
+
+const optimizer = new LLMCostOptimizer({ apiKey: process.env.RAPID_API_KEY });
+const result = await optimizer.compress({
+    text: "Long text block...",
+    strategy: ["minify", "strip_stopwords"]
+});
+// Returns: { compressed_text: "...", metrics: { original_tokens: X, compressed_tokens: Y, savings_percentage: "Z%" } }
+```
+
+
+### Optimization Strategies
+** minify: ** Strips line breaks, extra spaces, and redundant formatting structural noise.
+
+** strip_stopwords: ** Removes grammatical boilerplate filler terms (the, is, and) while locking down core factual intent nouns/verbs.
+
+** stemming: ** Inflects/reduces derived word roots down to structural linguisitic bases.
+
+### Runtime Safety Guardrails
+** Fail-Safe execution: ** Network timeouts, expired keys, or gateway API errors are caught internally. The wrapper prints a console warning and transparently forwards the untouched original prompt directly to the destination LLM provider. Application uptime is preserved.
+
+
+
+
+
+
+
+
