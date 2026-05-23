@@ -2,85 +2,162 @@
 
 > Zero-config, drop-in client wrapper and proxy utility designed to automatically optimize prompts, reduce token counts, and cut LLM API costs.
 
-## Core Integration Patterns
+---
 
-### 1. The Drop-In Wrapper (Recommended)
-Intercepts all outgoing chat completion arrays automatically, compresses the payload via the cloud API gateway, handles metrics telemetry, and passes optimized text to the model.
+# Core Integration Patterns
 
-- **Function:** `wrapClient(clientInstance, config)`
-- **Arguments:**
-  - `clientInstance`: An instantiated OpenAI or compatible client object.
-  - `config`: Object containing configuration keys.
-    - `rapidApiKey` (string, required): Your personal RapidAPI Gateway access key.
-    - `strategy` (array of strings, optional): Specific compression routines to run. Default runs standard minification.
+## 1. The Drop-In Wrapper (Recommended)
+
+Intercepts all outgoing chat completion arrays automatically, compresses the payload locally via the in-memory engine, and triggers background metrics telemetry.
+
+### Function
+
+```javascript
+wrapClient(clientInstance, config)
+```
+
+### Arguments
+
+#### `clientInstance` (Object)
+
+An instantiated OpenAI or compatible client object.
+
+#### `config` (Object)
+
+Object containing configuration keys.
+
+| Key | Type | Description |
+|---|---|---|
+| `mode` | `String` | Options include `"chat"`, `"rag"`, `"agent"`, or `"codegen"` |
+| `rapidApiKey` | `String` (Optional) | Secret registration identifier. Activating this parameter enables the asynchronous 5-second background batch telemetry interval. |
+| `strategy` | `Array` (Optional) | Specific compression routines to run. Defaults run standard minification and mode-specific fallbacks. |
+| `language` | `String` (Optional) | ISO dictionary language selector (`"en"`, `"es"`, `"fr"`). Defaults to `"en"`. |
+| `ignore_words` | `Array` (Optional) | Array of explicit strings protected from minification rules. |
+
+---
+
+### JavaScript
 
 ```javascript
 const { OpenAI } = require('openai');
 const { wrapClient } = require('llm-cost-optimizer-node');
 
-const openai = wrapClient(new OpenAI({ apiKey: process.env.OPENAI_API_KEY }), {
-    rapidApiKey: process.env.RAPID_API_KEY,
-    strategy: ["minify", "strip_stopwords"]
-});
-
-// Use client normally - interception happens seamlessly under the hood
-const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{ role: "user", content: "Your lengthy prompt text goes here..." }]
-});
-
+const openai = wrapClient(
+    new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+    {
+        mode: "rag",
+        rapidApiKey: process.env.RAPID_API_KEY
+    }
+);
 ```
 
-###2. Advanced Manual Mode
+---
+
+# 2. Advanced Manual Mode
+
 Direct access to the core compression class for handling raw text blocks, pre-processing RAG contexts, or saving tokens in custom vector workflows.
 
-** Class: ** LLMCostOptimizer
+## Class
 
-** Instance Methods: ** compress({ text, strategy, language })
-
+```javascript
+LLMCostOptimizer
 ```
+
+## Constructor Options
+
+```javascript
+{ apiKey }
+```
+
+## Instance Methods
+
+```javascript
+compress({ text, strategy, language })
+```
+
+---
+
+### JavaScript
+
+```javascript
 const { LLMCostOptimizer } = require('llm-cost-optimizer-node');
 
-const optimizer = new LLMCostOptimizer({ apiKey: process.env.RAPID_API_KEY });
+const optimizer = new LLMCostOptimizer({
+    apiKey: process.env.RAPID_API_KEY
+});
+
 const result = await optimizer.compress({
     text: "Long text block...",
     strategy: ["minify", "strip_stopwords"]
 });
-// Returns: { compressed_text: "...", metrics: { original_tokens: X, compressed_tokens: Y, savings_percentage: "Z%" } }
+
+// Returns:
+// {
+//   compressed_text: "...",
+//   metrics: {
+//     original_tokens: X,
+//     compressed_tokens: Z
+//   }
+// }
 ```
 
+---
 
-### Optimization Strategies
-** minify: ** Strips line breaks, extra spaces, and redundant formatting structural noise.
+# Global Executable CLI Interface
 
-** strip_stopwords: ** Removes grammatical boilerplate filler terms (the, is, and) while locking down core factual intent nouns/verbs.
+## Command
 
-** stemming: ** Inflects/reduces derived word roots down to structural linguisitic bases.
+```bash
+llm-optimize benchmark
+```
 
-### Runtime Safety Guardrails
-** Fail-Safe execution: ** Network timeouts, expired keys, or gateway API errors are caught internally. The wrapper prints a console warning and transparently forwards the untouched original prompt directly to the destination LLM provider. Application uptime is preserved.
+## Source Target
 
+```text
+./bin/cli.js
+```
 
-## Technical Implementation Details
-The client package uses an offline-first architecture to intercept outgoing payloads before network transmission.
+## Behavior
 
-### Method: `wrapClient(clientInstance, config)`
-Wraps an LLM SDK instance in a local structural Proxy interceptor.
+Executes a standardized processing matrix comparison, evaluating token estimations, local optimization effectiveness, and validating factual string security requirements via stdout tables.
 
-#### Parameters:
-- `clientInstance` (Object): Active LLM client instance (e.g., standard OpenAI instance).
-- `config` (Object): Configuration rules mapping optimization behavior.
-  - `mode` (String): Options include `"chat"`, `"rag"`, `"agent"`, or `"codegen"`. Defers to local rule blocks.
-  - `strategy` (Array): Execution array strings including `"minify"`, `"strip_stopwords"`, `"stemming"`, and `"strip_boilerplate"`.
-  - `language` (String): ISO dictionary language selector (`"en"`, `"es"`, `"fr"`). Defaults to `"en"`.
-  - `ignore_words` (Array): Array of strings protected from local minification rules.
+---
 
-#### Runtime Behavior:
-1. Intercepts `chat.completions.create` message payloads synchronously.
-2. Tokenizes and updates content properties using local memory allocations in <2ms.
-3. Automatically triggers an implicit safety fallback to pass the payload through unmutated if local parsing errors occur.
+# Optimization Strategies Reference
 
+| Strategy | Description |
+|---|---|
+| `minify` | Strips line breaks, extra spaces, and redundant formatting structural noise. |
+| `strip_stopwords` | Removes grammatical boilerplate filler terms (`the`, `is`, `and`) while locking down core factual intent nouns/verbs. |
+| `stemming` | Inflects/reduces derived word roots down to structural linguistic bases. |
+| `strip_boilerplate` | Strips raw HTML/XML markup anchors out of text streams. |
 
+---
 
+# Runtime Safety & Technical Architecture
 
+## Offline-First Core
 
+Intercepts `chat.completions.create` message payloads synchronously, parsing strings locally in-memory in `<2ms`.
+
+---
+
+## Non-Blocking Telemetry
+
+Outgoing analytics are held in a memory ring buffer queue and batch-flushed to:
+
+```text
+https://llm-token-optimizer-api.vercel.app/api/telemetry
+```
+
+every 5 seconds asynchronously to achieve zero application thread degradation.
+
+---
+
+## Fail-Safe Execution
+
+Network timeouts, expired keys, or gateway API errors are caught internally.
+
+The wrapper prints a console warning and transparently forwards the untouched original prompt directly to the destination LLM provider.
+
+Application uptime is preserved.
