@@ -61,7 +61,24 @@ const result = await optimizer.compress({
 ** Fail-Safe execution: ** Network timeouts, expired keys, or gateway API errors are caught internally. The wrapper prints a console warning and transparently forwards the untouched original prompt directly to the destination LLM provider. Application uptime is preserved.
 
 
+## Technical Implementation Details
+The client package uses an offline-first architecture to intercept outgoing payloads before network transmission.
 
+### Method: `wrapClient(clientInstance, config)`
+Wraps an LLM SDK instance in a local structural Proxy interceptor.
+
+#### Parameters:
+- `clientInstance` (Object): Active LLM client instance (e.g., standard OpenAI instance).
+- `config` (Object): Configuration rules mapping optimization behavior.
+  - `mode` (String): Options include `"chat"`, `"rag"`, `"agent"`, or `"codegen"`. Defers to local rule blocks.
+  - `strategy` (Array): Execution array strings including `"minify"`, `"strip_stopwords"`, `"stemming"`, and `"strip_boilerplate"`.
+  - `language` (String): ISO dictionary language selector (`"en"`, `"es"`, `"fr"`). Defaults to `"en"`.
+  - `ignore_words` (Array): Array of strings protected from local minification rules.
+
+#### Runtime Behavior:
+1. Intercepts `chat.completions.create` message payloads synchronously.
+2. Tokenizes and updates content properties using local memory allocations in <2ms.
+3. Automatically triggers an implicit safety fallback to pass the payload through unmutated if local parsing errors occur.
 
 
 
