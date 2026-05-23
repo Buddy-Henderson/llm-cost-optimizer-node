@@ -12,5 +12,7 @@
   ],
   "author": "Buddy Henderson",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "natural": "^8.1.1"
+  }
 }

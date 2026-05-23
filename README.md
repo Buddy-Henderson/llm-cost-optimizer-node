@@ -89,4 +89,26 @@ Pass these string arrays inside your configurations to tailor compression behavi
 ## Production Safety Guardrails
 
 * **Fail-Safe Design:** If your network goes down, your RapidAPI keys expire, or your gateway hits a rate limit, the client wrapper will instantly catch the exception, print a subtle terminal warning, and safely forward your original untouched prompt to your LLM provider. Your application production uptime will never be compromised.
-* **Privacy Focused:** Only raw prompt strings are transmitted through the optimization layer. No model parameters, application secret tokens, or user configuration states ever leave your local network footprint.
+* **Privacy Focused:** Only raw prompt strings are transmitted through the optimization layer. No model parameters, application secret tokens, or user configuration states ever leave your local network footprint.*
+
+ 
+ ## Advanced Configuration: Optimization Modes
+
+Different workloads require different token-slashing guardrails. `llm-cost-optimizer-node` includes four specialized contextual intelligence modes to maximize savings without breaking your application code logic.
+
+```javascript
+const openai = wrapClient(new OpenAI(), {
+    rapidApiKey: process.env.RAPID_API_KEY,
+    mode: "rag", // Options: "chat" | "rag" | "agent" | "codegen"
+    strategy: ["minify", "strip_stopwords", "stemming"]
+});
+```
+
+### Supported Modes
+
+| Mode | Target Workload | Optimization Strategy | Safety Guardrail |
+| :--- | :--- | :--- | :--- |
+| **`"chat"`** *(Default)* | Multi-turn conversational bots | Removes conversational fluff, repetitive greetings, and common stop-words. | Preserves core user requirements and conversational emotional intent. |
+| **`"rag"`** | Vector DB / Knowledge Retrieval | Aggressively slashes contextual boilerplate text down to core informational roots. | **Strictly locks down and protects** all numbers, dates, currency formats, and database IDs. |
+| **`"agent"`** | Structured Tool & Function Loops | Compresses internal natural language reasoning and system strings. | **Zero character corruption.** Automatically isolates and bypasses JSON blocks, braces `{}`, brackets `[]`, and code anchors. |
+| **`"codegen"`** | LLM Programming Assistants | Strips multi-line documentation strings, developer comments (`//`, `/* */`), and redundant spacing noise. | Leaves underlying functional source code structures completely executable. |
