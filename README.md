@@ -1,36 +1,31 @@
-# LLM Cost & Context Optimizer (`llm-cost-optimizer-node`) V 1.1.3
+# LLM Cost & Context Optimizer (`llm-cost-optimizer-node`) v1.1.3
 
-A zero-config, drop-in client wrapper and proxy utility designed to automatically engineer your prompts. Reduce your LLM token count, increase your effective context windows, and slash your API bills by up to 40% with minimal cognitive overhead.
-
----
-
-## ⚡ Key Features
-
-- **Invisible Integration:** Wrap your existing OpenAI client once and change zero lines of execution code.
-- **Zero-Latency Processing:** Token minification executes locally in-memory (< 2ms) using high-performance NLP dictionaries.
-- **Intelligent Workload Modes:** Four dedicated contextual optimization profiles for `chat`, `rag`, `agent`, and `codegen`.
-- **Asynchronous Telemetry:** Non-blocking background event emitters buffer and stream cost savings metadata to cloud dashboards without delaying production runtime execution paths.
-- **Fidelity Benchmarking CLI:** Built-in validation suite to audit structural integrity and token contraction percentages instantly.
+A zero-config, drop-in client wrapper and proxy utility designed to automatically optimize your prompts. Reduce your LLM token count, maximize your effective context windows, and slash your API bills by up to 40% with zero changes to your existing execution logic.
 
 ---
 
-# Installation
+## Key Features
+
+* **Invisible Integration:** Wrap your existing OpenAI client once and change zero lines of downstream execution code.
+* **In-Memory Local Execution:** Token minification executes instantly in-memory (< 2ms) using high-performance NLP dictionaries—no external API overhead for processing text.
+* **Intelligent Workload Modes:** Four dedicated contextual optimization profiles tailored for `chat`, `rag`, `agent`, and `codegen`.
+* **Asynchronous Cloud Telemetry:** Non-blocking background event loop buffers and flushes cost savings metadata to dashboards without delaying production runtime execution paths.
+* **Robust Fail-Safe Design:** If any internal exception or telemetry network blip occurs, the proxy engages a silent bypass to ensure your raw prompt safely reaches your LLM provider.
+
+---
+
+## Installation
 
 ```bash
 npm install llm-cost-optimizer-node
 ```
 
----
+## Usage Guide
 
-# Usage Guide
+### 1. The Drop-In Wrapper (Recommended)
+By wrapping your native client instance, every single prompt sent to chat.completions.create is intercepted, compressed locally, and processed safely in the background.
 
-## 1. The Drop-In Wrapper (Recommended)
-
-This is the fastest path to integration. By wrapping your native client instance, every single prompt sent to `chat.completions.create` is intercepted, compressed, and measured automatically in the background.
-
-### JavaScript
-
-```javascript
+```
 const { OpenAI } = require('openai');
 const { wrapClient } = require('llm-cost-optimizer-node');
 
@@ -38,8 +33,9 @@ const { wrapClient } = require('llm-cost-optimizer-node');
 const openai = wrapClient(
     new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
     {
-        mode: "rag", // Options: "chat" | "rag" | "agent" | "codegen"
-        strategy: ["minify", "strip_stopwords", "stemming"] // Optional overrides
+        mode: "rag",               // Options: "chat" | "rag" | "agent" | "codegen"
+        language: "en",            // Supported token lookups: "en" | "es" | "fr"
+        ignore_words: ["database"] // Optional array of terms to lock down completely
     }
 );
 
@@ -61,87 +57,67 @@ const response = await openai.chat.completions.create({
 console.log(response.choices[0].message.content);
 ```
 
----
+## Optional Enterprise Cloud Analytics Dashboard
+To unlock centralized financial tracking and custom visualizations, pass your cloud gateway token in the configurations array. The internal proxy engine will automatically buffer metrics and flush them asynchronously every 5 seconds.
 
-## 🟢 Automatic Console Telemetry
-
-The moment the request fires, your terminal logs will automatically stream crisp, quantified optimization metrics without requiring extra logging pipelines.
-
-### Plaintext
-
-```text
-┌────────────────────────────────────────────────────────┐
-│ --- [Optimizer Proxy] Intercepting Outgoing Messages... │
-│ 🟢 [Local Optimizer] USER message optimized: 21 -> 14  │
-│  tokens (33.3% Saved)                                  │
-└────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📈 Optional Enterprise Cloud Telemetry Dashboard
-
-To unlock centralized financial tracking and visualization, include your cloud gateway profile token. The wrapper will automatically stream tracking analytics asynchronously in the background every 5 seconds without altering your application execution speeds.
-
-### JavaScript
-
-```javascript
+```    
 const openai = wrapClient(new OpenAI(), {
     mode: "chat",
-    rapidApiKey: "your_hosted_rapidapi_dashboard_key" // Toggles background SaaS analytics sync
+    rapidApiKey: "your_hosted_rapidapi_dashboard_key" // Toggles non-blocking background SaaS sync
 });
 ```
 
----
+### 2. Advanced Manual Direct Mode
+If you prefer to compress standalone strings, raw system files, or custom context variables before feeding them into specialized vector pipelines or state machines, use the internal utility methods directly.
 
-# 2. Advanced Manual Mode
+```
+const { compressTextLocally, estimateTokens } = require('llm-cost-optimizer-node');
 
-If you prefer to compress standalone strings, raw system text, or custom JSON payloads before feeding them into specialized agent states or memory lifecycles, instantiate the core class directly.
+const originalPrompt = "The ergonomic configuration variables are thoroughly documented inside the main repository archive.";
 
-### JavaScript
-
-```javascript
-const { LLMCostOptimizer } = require('llm-cost-optimizer-node');
-
-const optimizer = new LLMCostOptimizer({
-    apiKey: process.env.RAPID_API_KEY
+const optimizedPrompt = compressTextLocally(originalPrompt, {
+    mode: "chat",
+    strategy: ["minify", "strip_stopwords"],
+    language: "en"
 });
 
-async function optimizeText() {
-    const result = await optimizer.compress({
-        text: "The ergonomic configuration variables are thoroughly documented inside the main repository archive.",
-        strategy: ["minify", "strip_stopwords"],
-        language: "en"
-    });
-
-    console.log("Lean Prompt Text:", result.compressed_text);
-
-    console.log("Savings Metrics:", result.metrics);
-    // Returns:
-    // {
-    //   original_tokens: X,
-    //   compressed_tokens: Y,
-    //   savings_percentage: "Z%"
-    // }
-}
-
-optimizeText();
+console.log("Original Tokens:", estimateTokens(originalPrompt));
+console.log("Compressed Text:", optimizedPrompt);
+console.log("Optimized Tokens:", estimateTokens(optimizedPrompt));
 ```
 
----
+## Engine Profiles & Parameters
 
-# 📊 Terminal Benchmarking CLI
+### Contextual Optimization Modes
 
-Audit your optimization savings ratios and verify semantic safety loops straight from your terminal command line shell.
+Different LLM tasks require unique token-slashing guardrails. llm-cost-optimizer-node uses specialized rule engines to maximize cost reduction without disrupting application data flow:
 
-### Bash
+| Mode | Target Workload | Strategy Engaged | Safety Guardrail |
+|---|---|---|---|
+| `"chat"` (Default) | Multi-turn conversational systems | Removes conversational fluff, filler phrasing, and stop-words. | Preserves user queries and emotional intent indicators. |
+| `"rag"` | Knowledge Retrieval / Vector Contexts | Aggressively slashes contextual boilerplate text down to core factual roots. | Automatically extracts and safely locks down all numbers, dates, monetary codes, and database IDs. |
+| `"agent"` | Structured Tool & Function Call Loops | Compresses token overhead in natural language system descriptions. | Zero symbol corruption. Tracks and completely bypasses JSON arrays, curly braces `{}`, code brackets `[]`, and symbols. |
+| `"codegen"` | AI Programming Assistants | Strips multi-line comment blocks (`/* */`), inline noise (`//`), and unnecessary indentation whitespace. | Leaves underlying functional syntax and source code structures fully executable. |
 
-```bash
-# Link the package binary globally (if developing locally)
-npm link
+### Selectable Strategy Filters
 
-# Run the live diagnostic suite
-llm-optimize benchmark
+| Strategy | Description | Recommended Workloads |
+|---|---|---|
+| `minify` | Slices out horizontal tabs, carriage returns, and redundant space streams. | Global baseline cleanup across all workflows. |
+| `strip_stopwords` | Filters out language-specific grammatical boilerplate filler terms (`the`, `is`, `and`, `an`). | Dense, text-heavy systems, document summaries, and raw transcripts. |
+| `stemming` | Truncates inflected words down to their root linguistic base structure (`telemetry → telem`). | Massive context windows and high-volume background ingestion tasks. |
+
+## Production Safety Design
+
+* Fail-Safe Bypass: If your user passes an unexpected type or an edge-case syntax error is encountered inside the wrapper, the code catches it gracefully, issues a subtle ⚠️ [Optimizer Warning], and forwards your original payload unaltered to the LLM. Your system uptime is never compromised.
+
+* 100% Privacy Focused: Prompt compression and text parsing execute completely on your local compute instance. No model secrets, API environment keys, or proprietary data streams are sent across public networks. Telemetry only tracks numeric token counts, timestamps, and active modes.
+
+### Highlights of what we improved:
+
+1. **API Alignment:** Your previous `README` showed instantiated client definitions (`new LLMCostOptimizer()`), but your code actually exports functions (`wrapClient`, `compressTextLocally`, `estimateTokens`). The updated file reflects exactly how a user imports your library.
+2. **Clarity on Compute:** The new copy clearly specifies that text optimization is **in-memory and local**, making it much more attractive for developers worried about data latency.
+3. **Formatted Tables:** Rebuilt the parameter indices using scannable Markdown formatting tables to make the features look professional at a glance.llm-optimize benchmark
 ```
 
 ### Expected Output Matrix
