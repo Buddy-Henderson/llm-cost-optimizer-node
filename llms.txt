@@ -1,44 +1,56 @@
-# llm-cost-optimizer-node
+# llm-cost-optimizer-node (v1.1.3)
 
-> Zero-config, drop-in client wrapper and proxy utility designed to automatically optimize prompts, reduce token counts, and cut LLM API costs.
+> High-performance, offline-first client wrapper proxy and context optimization utility. Minifies prompt strings locally in-memory (<2ms) to compress context windows and drop API costs. Includes non-blocking, background-batched cloud telemetry syncing.
 
 ---
 
-# Core Integration Patterns
+## Core API Architecture & Exports
 
-## 1. The Drop-In Wrapper (Recommended)
+The library exposes three core procedural functional utilities. It does not export classes.
 
-Intercepts all outgoing chat completion arrays automatically, compresses the payload locally via the in-memory engine, and triggers background metrics telemetry.
+```javascript
+const { wrapClient, compressTextLocally, estimateTokens } = require('llm-cost-optimizer-node');
+```
 
-### Function
+## 1. The Proxy Wrapper Pipeline
+Signature
 
 ```javascript
 wrapClient(clientInstance, config)
 ```
 
-### Arguments
+Intercepts outgoing OpenAI chat.completions.create message payload arrays via a JavaScript Proxy mechanism. It compresses message contents synchronously in-memory before forwarding the modified parameters to the destination target.
 
-#### `clientInstance` (Object)
+### Parameters
 
-An instantiated OpenAI or compatible client object.
+### Configuration Reference
 
-#### `config` (Object)
+## `clientInstance` (Object)
 
-Object containing configuration keys.
+An instantiated native OpenAI client or structurally compatible SDK instance exposing:
 
-| Key | Type | Description |
-|---|---|---|
-| `mode` | `String` | Options include `"chat"`, `"rag"`, `"agent"`, or `"codegen"` |
-| `rapidApiKey` | `String` (Optional) | Secret registration identifier. Activating this parameter enables the asynchronous 5-second background batch telemetry interval. |
-| `strategy` | `Array` (Optional) | Specific compression routines to run. Defaults run standard minification and mode-specific fallbacks. |
-| `language` | `String` (Optional) | ISO dictionary language selector (`"en"`, `"es"`, `"fr"`). Defaults to `"en"`. |
-| `ignore_words` | `Array` (Optional) | Array of explicit strings protected from minification rules. |
+```javascript
+chat.completions.create
+```
 
 ---
 
-### JavaScript
+## `config` (Object)
 
-```javascript
+Configuration parameters regulating the local token optimization passes.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `mode` | `String` (Optional) | Contextual strategy engine profile. Options: `"chat"` \| `"rag"` \| `"agent"` \| `"codegen"`. Defaults to `"chat"`. |
+| `language` | `String` (Optional) | ISO dictionary lookups for stop-word filtering. Options: `"en"` \| `"es"` \| `"fr"`. Defaults to `"en"`. |
+| `rapidApiKey` | `String` (Optional) | Gateway key that activates a non-blocking background telemetry reporter loop flushing metrics every `5000ms`. |
+| `strategy` | `Array<String>` (Optional) | Manual override array of algorithms to execute. Options: `"minify"` \| `"strip_stopwords"` \| `"stemming"` \| `"strip_boilerplate"`. |
+| `ignore_words` | `Array<String>` (Optional) | Custom list of terminology strings explicitly locked down and protected from stop-word or stemming compression rules. |
+
+
+## Code Sample
+
+```
 const { OpenAI } = require('openai');
 const { wrapClient } = require('llm-cost-optimizer-node');
 
@@ -46,118 +58,106 @@ const openai = wrapClient(
     new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
     {
         mode: "rag",
-        rapidApiKey: process.env.RAPID_API_KEY
+        language: "en",
+        rapidApiKey: process.env.RAPID_API_KEY,
+        ignore_words: ["cluster-01", "sharding"]
     }
 );
-```
 
----
-
-# 2. Advanced Manual Mode
-
-Direct access to the core compression class for handling raw text blocks, pre-processing RAG contexts, or saving tokens in custom vector workflows.
-
-## Class
-
-```javascript
-LLMCostOptimizer
-```
-
-## Constructor Options
-
-```javascript
-{ apiKey }
-```
-
-## Instance Methods
-
-```javascript
-compress({ text, strategy, language })
-```
-
----
-
-### JavaScript
-
-```javascript
-const { LLMCostOptimizer } = require('llm-cost-optimizer-node');
-
-const optimizer = new LLMCostOptimizer({
-    apiKey: process.env.RAPID_API_KEY
+// Downstream execution signatures remain completely unaltered
+const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{ role: "user", content: "Optimize cluster-01 sharding parameters immediately." }]
 });
+```
 
-const result = await optimizer.compress({
-    text: "Long text block...",
+## 2. Standalone Utility Functions
+
+For granular data transformations inside vector embeddings, agent lifecycles, or state machine variables.
+
+# Utility Functions
+
+## `compressTextLocally(text, config)`
+
+Executes synchronous linguistic optimization algorithms directly on raw string inputs.
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `text` | `String` | The raw text block to pass through compression. |
+| `config` | `Object` | Matches parameters defined in `wrapClient` (`mode`, `strategy`, `language`, `ignore_words`). |
+
+### Returns
+
+```javascript
+String
+```
+
+The optimized text.
+
+---
+
+## `estimateTokens(text)`
+
+Executes a high-speed token heuristic calculation using character splits.
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `text` | `String` | Target text. |
+
+### Returns
+
+```javascript
+Number
+```
+
+Estimated integer token size.
+
+## Code Sample
+
+```
+const { compressTextLocally, estimateTokens } = require('llm-cost-optimizer-node');
+
+const rawContext = "The administrative telemetry configurations are thoroughly optimized.";
+const cleanText = compressTextLocally(rawContext, {
+    mode: "chat",
     strategy: ["minify", "strip_stopwords"]
 });
 
-// Returns:
-// {
-//   compressed_text: "...",
-//   metrics: {
-//     original_tokens: X,
-//     compressed_tokens: Z
-//   }
-// }
+console.log(`Tokens: ${estimateTokens(rawContext)} -> ${estimateTokens(cleanText)}`);
 ```
 
----
+## Workload Engine Profiles
 
-# Global Executable CLI Interface
+| Mode | Default Strategies | Internal Safeguard Triggers & Regex Behaviors |
+|---|---|---|
+| `"chat"` | `["minify", "strip_stopwords"]` | Standard conversion filtering. Preserves conversational intent verbs. |
+| `"rag"` | `["minify", "strip_stopwords", "stemming"]` | Extracts alphanumeric strings, numbers, values, and identifiers (`/\b\d+[\w-]*\b|\$\d+(?:\.\d+)?/g`) and forces them automatically into `ignore_words` to prevent data loss. |
+| `"agent"` | `["minify"]` | Isolates syntactic symbols, formatting control anchors, and JSON boundaries (`/[{}[\]"':,📊🤖⚙️]/g`) and flags them to preserve system block integrity. |
+| `"codegen"` | `["minify"]` | Strips out multi-line documentation strings and code comments (`/\*[\s\S]*?\*/`). |
 
-## Command
+## Telemetry & Runtime Engineering
 
-```bash
-llm-optimize benchmark
+### Non-Blocking Memory Ring Buffer
+
+When a rapidApiKey configuration parameter is evaluated, a background execution loop starts. Metric tracking payloads are safely enqueued onto an in-memory array queue:
+
+```
+[https://llm-token-optimizer-api.vercel.app/api/telemetry](https://llm-token-optimizer-api.vercel.app/api/telemetry)
 ```
 
-## Source Target
+An internal setInterval block batch-flushes this queue every 5000ms. The buffer array is instantly re-instantiated on flush intervals to prevent system memory corruption or race conditions.
 
-```text
-./bin/cli.js
-```
+Global CLI Binary Interface
+* Command: llm-optimize benchmark
 
-## Behavior
+* Entry Script Location: ./bin/cli.js
 
-Executes a standardized processing matrix comparison, evaluating token estimations, local optimization effectiveness, and validating factual string security requirements via stdout tables.
+* Behavior: Inks structural layout matrices checking linguistic effectiveness and rule boundaries across modes via terminal standard output channels.
 
----
+### Production Resiliency Guardrail
 
-# Optimization Strategies Reference
-
-| Strategy | Description |
-|---|---|
-| `minify` | Strips line breaks, extra spaces, and redundant formatting structural noise. |
-| `strip_stopwords` | Removes grammatical boilerplate filler terms (`the`, `is`, `and`) while locking down core factual intent nouns/verbs. |
-| `stemming` | Inflects/reduces derived word roots down to structural linguistic bases. |
-| `strip_boilerplate` | Strips raw HTML/XML markup anchors out of text streams. |
-
----
-
-# Runtime Safety & Technical Architecture
-
-## Offline-First Core
-
-Intercepts `chat.completions.create` message payloads synchronously, parsing strings locally in-memory in `<2ms`.
-
----
-
-## Non-Blocking Telemetry
-
-Outgoing analytics are held in a memory ring buffer queue and batch-flushed to:
-
-```text
-https://llm-token-optimizer-api.vercel.app/api/telemetry
-```
-
-every 5 seconds asynchronously to achieve zero application thread degradation.
-
----
-
-## Fail-Safe Execution
-
-Network timeouts, expired keys, or gateway API errors are caught internally.
-
-The wrapper prints a console warning and transparently forwards the untouched original prompt directly to the destination LLM provider.
-
-Application uptime is preserved.
+The entire wrapper interceptor loop is contained inside an explicit global try/catch block. If an underlying network exception, empty dependency variant, or structural type mismatch occurs, the engine triggers a non-blocking console.warn message and engages a silent pass-through bypass layer. The original string data structures are delivered to the target LLM completely unchanged, ensuring 0% application runtime execution downtime.
